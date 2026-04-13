@@ -63,13 +63,31 @@ print("Simulation completed.")
 print("\nPlotting results...")
 bins = list(range(1, len(base_model_acc) + 1))
 
-plt.plot(bins, base_model_acc, label='Base Model')
-plt.plot(bins, adaptive_model_acc, label='Adaptive Model')
+window = 5
+base_model_acc_avg = []
+for ind in range(len(base_model_acc) - window + 1):
+    base_model_acc_avg.append(np.mean(base_model_acc[ind:ind+window]))
+
+adaptive_model_acc_avg = []
+for ind in range(len(adaptive_model_acc) - window + 1):
+    adaptive_model_acc_avg.append(np.mean(adaptive_model_acc[ind:ind+window]))
+
+bins_avg = bins[window - 1:]
+
+plt.plot(bins_avg, base_model_acc_avg, label='Base Model')
+plt.plot(bins_avg, adaptive_model_acc_avg, label='Adaptive Model')
 
 # Plot a point on the adaptive model line for each unique drift detection
 unique_drifts = sorted(set(drifts))
-drift_y = [adaptive_model_acc[drift - 1] for drift in unique_drifts]
-plt.scatter(unique_drifts, drift_y, color='red', zorder=5, label='Drift Detections')
+drift_x = []
+drift_y = []
+for drift in unique_drifts:
+    if drift in bins_avg:
+        idx = bins_avg.index(drift)
+        drift_x.append(drift)
+        drift_y.append(adaptive_model_acc_avg[idx])
+
+plt.scatter(drift_x, drift_y, color='red', zorder=5, label='Drift Detections')
 
 plt.xlabel('Bin ID')
 plt.ylabel('Accuracy')
