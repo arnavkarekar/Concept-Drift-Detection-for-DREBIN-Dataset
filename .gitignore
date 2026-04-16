@@ -1,2 +1,8 @@
 Datasets/*
 Results/*
+__pycache__/*
+*.pyc
+*.pyo
+*.pycache
+researchpaper.pdf
+temp.py
