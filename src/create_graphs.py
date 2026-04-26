@@ -79,3 +79,46 @@ def display_temporal_buckets(data, title, filename):
     os.makedirs("Results", exist_ok=True)
     plt.savefig(f"Results/{filename}")
     print(f"Saved plot to Results/{filename}")
+
+def plot_experiment_results(data, base_model_acc, adaptive_model_acc, drifts, filename="drebin.png"):
+    print("\nPlotting results...")
+    bins = list(range(2, int(data['temporal_bucket'].max()) + 1))
+
+    window = 5
+    base_model_acc_avg = []
+    for ind in range(len(base_model_acc) - window + 1):
+        base_model_acc_avg.append(np.mean(base_model_acc[ind:ind+window]))
+
+    adaptive_model_acc_avg = []
+    for ind in range(len(adaptive_model_acc) - window + 1):
+        adaptive_model_acc_avg.append(np.mean(adaptive_model_acc[ind:ind+window]))
+
+    bins_avg = bins[window - 1:]
+
+    plt.figure()
+    plt.plot(bins_avg, base_model_acc_avg, label='Base Model')
+    plt.plot(bins_avg, adaptive_model_acc_avg, label='Adaptive Model')
+
+    # Plot a point on the adaptive model line for each unique drift detection
+    unique_drifts = sorted(set(drifts))
+    drift_x = []
+    drift_y = []
+    for drift in unique_drifts:
+        if drift in bins_avg:
+            idx = bins_avg.index(drift)
+            drift_x.append(drift)
+            drift_y.append(adaptive_model_acc_avg[idx])
+
+    plt.scatter(drift_x, drift_y, color='red', zorder=5, label='Drift Detections')
+
+    plt.xlabel('Bin ID')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    # Save plot to results before showing (show() clears the figure)
+    import os
+    os.makedirs("Results", exist_ok=True)
+    print(f"\nSaving plot to Results/{filename}...")
+    plt.savefig(f"Results/{filename}")
+    print("Plot saved.")
+    print("Results plotted.")

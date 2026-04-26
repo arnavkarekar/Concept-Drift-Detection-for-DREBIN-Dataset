@@ -1,5 +1,6 @@
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
+import pickle
 
 def train_words(df, bin_id=None):
     """
@@ -35,7 +36,7 @@ def train_words(df, bin_id=None):
         X = vectorizer.transform(all_text)
     
     # Create a dense DataFrame to hold our new features, using int8 to optimize memory usage
-    feature_names = vectorizer.get_feature_names_out()
+    feature_names = ['word_' + f for f in vectorizer.get_feature_names_out()]
     vec_df = pd.DataFrame(X.toarray(), columns=feature_names, dtype='int8')
     
     # Drop original text columns

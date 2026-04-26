@@ -3,7 +3,7 @@ import pandas as pd
 import pickle
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
-from src.create_graphs import display_freq, display_temporal_buckets
+from create_graphs import display_freq, display_temporal_buckets
 
 def load_dataset(file_path):
     """
@@ -87,24 +87,6 @@ def create_temporal_bins(data, num_bins=101):
 
     return data
 
-def preprocess_features(df):
-    """
-    Convert date to datetime and sort by submission date.
-    """
-    date_col = 'submission_date' if 'submission_date' in df.columns else ('meta.vt.date' if 'meta.vt.date' in df.columns else None)
-
-    if date_col:
-        # Convert date column to datetime
-        df[date_col] = pd.to_datetime(df[date_col])
-        df[date_col] = df[date_col].dt.to_period('M')
-
-        # Sort by date
-        df = df.sort_values(date_col)
-        
-    print("Finished preprocessing features.")
-
-    return df
-    
 def create_dataset(file_path):
     """
     Create a dataset from a parquet file.
@@ -119,7 +101,18 @@ def create_dataset(file_path):
     
     if df is None:
         return None
-    df = preprocess_features(df)
+        
+    date_col = 'submission_date' if 'submission_date' in df.columns else ('meta.vt.date' if 'meta.vt.date' in df.columns else None)
+
+    if date_col:
+        # Convert date column to datetime
+        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = df[date_col].dt.to_period('M')
+
+        # Sort by date
+        df = df.sort_values(date_col)
+        
+    print("Finished preprocessing features.")
     df = create_temporal_bins(df)
 
     print("Saving dataset to Datasets/drebin.pkl...")
