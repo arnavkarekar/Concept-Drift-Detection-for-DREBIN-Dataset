@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pyarrow.parquet as pq
+import pickle as pkl
 
 def display_freq(goodware_freq, malware_freq, title, filename):
     dates = sorted(set(goodware_freq.keys()) | set(malware_freq.keys()))
@@ -88,8 +89,8 @@ def main():
     malware_dates = []
     goodware_dates = []
 
-    # Read only 'label' and 'meta.vt.date' columns to minimize RAM exhaustion
-    for batch in pf.iter_batches(batch_size=50000, columns=['label', 'meta.vt.date']):
+    # Read 'Unnamed: 0', 'label' and 'meta.vt.date' columns to minimize RAM exhaustion
+    for batch in pf.iter_batches(batch_size=50000, columns=['Unnamed: 0', 'label', 'meta.vt.date']):
         df_chunk = batch.to_pandas()
         
         # Ensure correct columns exist
@@ -113,8 +114,8 @@ def main():
             
         total_processed += len(df_chunk)
         
-        m_chunk = df_chunk[df_chunk['label'] == 1][['meta.vt.date', 'label']]
-        b_chunk = df_chunk[df_chunk['label'] == 0][['meta.vt.date', 'label']]
+        m_chunk = df_chunk[df_chunk['label'] == 1][['Unnamed: 0', 'meta.vt.date', 'label']]
+        b_chunk = df_chunk[df_chunk['label'] == 0][['Unnamed: 0', 'meta.vt.date', 'label']]
         malware_dates.append(m_chunk)
         goodware_dates.append(b_chunk)
         
@@ -158,6 +159,39 @@ def main():
         sampled_list.append(b_sampled)
         
     sampled_df = pd.concat(sampled_list, ignore_index=True)
+
+    # Convert the sampled DataFrame IDs to a set for fast lookup
+    sampled_ids = set(sampled_df['Unnamed: 0'].tolist())
+    
+    # Map the IDs back to their temporal buckets
+    id_to_bucket = sampled_df.set_index('Unnamed: 0')['TemporalBuckets'].to_dict()
+
+    print(f"Sampled {len(sampled_ids)} items. Running second pass to extract full features...")
+    
+    full_chunks = []
+    total_processed = 0
+    # Process original dataset again to get ALL columns for the sampled rows
+    for batch in pf.iter_batches(batch_size=50000):
+        df_chunk = batch.to_pandas()
+        
+        # Filter to keep only the rows we've sampled
+        mask = df_chunk['Unnamed: 0'].isin(sampled_ids)
+        if mask.any():
+            full_chunks.append(df_chunk[mask].copy())
+            
+        total_processed += len(df_chunk)
+        print(f"Second pass: Processed {total_processed} rows...", end='\r')
+        
+    print("\nAssembling final dataset...")
+    final_df = pd.concat(full_chunks, ignore_index=True)
+    
+    # Attach the assigned temporal buckets!
+    final_df['TemporalBuckets'] = final_df['Unnamed: 0'].map(id_to_bucket)
+
+    print("Saving fully featured sampled dataset to Datasets/androbin_sampled.pkl...")
+    with open("Datasets/androbin_sampled.pkl", "wb") as file:
+        pkl.dump(final_df, file)
+    print("Sampled dataset saved successfully.")
     
     print("\nGenerating 1:1 sampled frequency chart...")
     display_temporal_buckets(sampled_df, "Distribution of Benign and Malware Samples Across Months (Androbin)", "androbin_freq_undersampled.png")

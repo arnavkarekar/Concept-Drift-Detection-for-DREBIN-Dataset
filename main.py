@@ -21,15 +21,21 @@ drift_detector = drift.ADWIN()
 drifts = []
 print("Drift detector initialized.")
 
+from src.create_dataset import preprocess_features
+
 # Load data
 print("\nLoading data...")
-data = pickle.load(open('Datasets/drebin.pkl', 'rb'))
+# data = pickle.load(open('Datasets/drebin.pkl', 'rb'))
+drebin_data = pickle.load(open('Datasets/androbin_sampled.pkl', 'rb'))
 print("Data loaded.")
+
+print("\nPreprocessing features...")
+drebin_data = preprocess_features(drebin_data)
 
 # Prepare data
 print("\nPreparing data...")
-train_data = data[data['bin_id'] == 0]
-X_train = train_data.drop(['label', 'bin_id', 'sha256', 'submission_date'], axis=1)
+train_data = drebin_data[drebin_data['TemporalBuckets'] == 1]
+X_train = train_data.drop(['label', 'TemporalBuckets', 'sha256', 'submission_date'], axis=1)
 y_train = train_data['label']
 print("Data prepared.")
 
@@ -38,10 +44,10 @@ print("\nStarting Simulation...")
 base_model.fit(X_train, y_train)
 adaptive_model.fit(X_train, y_train)
 
-for i in range(1, int(data['bin_id'].max()) + 1):
+for i in range(2, int(drebin_data['TemporalBuckets'].max()) + 1):
     print(f"Processing bin {i}...")
-    train_data = data[data['bin_id'] == i]
-    X = train_data.drop(['label', 'bin_id', 'sha256', 'submission_date'], axis=1)
+    train_data = drebin_data[drebin_data['TemporalBuckets'] == i]
+    X = train_data.drop(['label', 'TemporalBuckets', 'sha256', 'submission_date'], axis=1)
     y = train_data['label']
     
     predictions = adaptive_model.predict(X)

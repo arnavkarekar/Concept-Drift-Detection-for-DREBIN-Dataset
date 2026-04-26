@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from create_dataset import load_dataset
+import pickle as pkl
 
 def display_freq(data, title, filename):
     data = data.copy()
@@ -120,7 +121,12 @@ def main():
         sampled_list.append(b_sampled)
         
     sampled_df = pd.concat(sampled_list, ignore_index=True)
-    
+
+    print("Saving sampled dataset to Datasets/drebin_sampled.pkl...")
+    with open("Datasets/drebin_sampled.pkl", "wb") as file:
+        pkl.dump(sampled_df, file)
+    print("Sampled dataset saved successfully.")
+
     print("\nGenerating 1:1 sampled frequency chart...")
     display_temporal_buckets(sampled_df, "Distribution of Benign and Malware Samples Across Months", "drebin_freq_undersampled.png")
     print("\nDone.")

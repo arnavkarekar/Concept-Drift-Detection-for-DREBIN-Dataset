@@ -1,0 +1,27 @@
+Drebin Dataset Features (Columns):
+sha256
+submission_date
+api_call
+permission
+url
+provider
+feature
+intent
+activity
+call
+service_receiver
+real_permission
+label
+
+Androbin (Androzoo) Dataset Features (Columns):
+Unnamed: 0
+meta.vt.date
+resource.entry
+source.class.package
+manifest.permission
+manifest.activity
+manifest.action
+manifest.category
+manifest.feature
+source.method.name
+label
