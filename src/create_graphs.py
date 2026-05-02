@@ -80,20 +80,24 @@ def display_temporal_buckets(data, title, filename):
     plt.savefig(f"Results/{filename}")
     print(f"Saved plot to Results/{filename}")
 
-def plot_experiment_results(data, base_model_acc, adaptive_model_acc, drifts, filename="drebin.png"):
+def plot_experiment_results(data, base_model_acc, adaptive_model_acc, drifts, train_bin=5, filename="drebin.png"):
     print("\nPlotting results...")
-    bins = list(range(2, int(data['temporal_bucket'].max()) + 1))
+    bins = list(range(1, int(data['temporal_bucket'].max()) + 1))
 
     window = 5
     base_model_acc_avg = []
+    adaptive_model_acc_avg = []
+
+    # Calculate the accuracy of the first (window - 1) bins
+    for ind in range(window - 1):
+        base_model_acc_avg.append(np.mean(base_model_acc[:ind+1]))
+        adaptive_model_acc_avg.append(np.mean(adaptive_model_acc[:ind+1]))
+
     for ind in range(len(base_model_acc) - window + 1):
         base_model_acc_avg.append(np.mean(base_model_acc[ind:ind+window]))
-
-    adaptive_model_acc_avg = []
-    for ind in range(len(adaptive_model_acc) - window + 1):
         adaptive_model_acc_avg.append(np.mean(adaptive_model_acc[ind:ind+window]))
 
-    bins_avg = bins[window - 1:]
+    bins_avg = bins
 
     plt.figure()
     plt.plot(bins_avg, base_model_acc_avg, label='Base Model')
@@ -108,6 +112,9 @@ def plot_experiment_results(data, base_model_acc, adaptive_model_acc, drifts, fi
             idx = bins_avg.index(drift)
             drift_x.append(drift)
             drift_y.append(adaptive_model_acc_avg[idx])
+
+    # Plot a vertical at train_bin
+    plt.axvline(x=train_bin, color='black', linestyle='-', linewidth=1)
 
     plt.scatter(drift_x, drift_y, color='red', zorder=5, label='Drift Detections')
 

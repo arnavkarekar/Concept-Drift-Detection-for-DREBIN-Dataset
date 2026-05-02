@@ -11,7 +11,7 @@ def callibrate_model():
     data = create_dataset(file_path)
 
     ### Train Words on the full dataset
-    data = train_words(data)
+    data = train_words(data, 101)
 
     ### Train a model on the entire dataset
     print("Training Ideal Model on complete dataset...")
@@ -22,7 +22,7 @@ def callibrate_model():
     model.fit(X, y)
 
     ### Initialize drift detector calibration
-    current_delta = 0.002
+    current_delta = 0.4
 
     ### Run datashift simulation
     while True:
@@ -48,8 +48,8 @@ def callibrate_model():
                 break
                 
         if drift_detected:
-            print(f"Drift detected at bin {i} with delta {current_delta}. Reducing delta by 10x.")
-            current_delta /= 10.0
+            print(f"Drift detected at bin {i} with delta {current_delta}. Reducing delta by 2.")
+            current_delta /= 2
         else:
             print(f"Calibration successful! No drift detected with delta {current_delta}")
             break
